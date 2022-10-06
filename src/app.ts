@@ -9,6 +9,8 @@ import cors from 'cors';
 import indexRouter from './routes/index';
 import usersRouter from './routes/users';
 
+import db from './config/database.config';
+
 const app = express();
 
 app.use(cors());
@@ -20,6 +22,11 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+db.sync().then(() => {
+    console.log('database sucessfully connected');  
+}).catch((err) => console.log(err)
+);
 
 app.use(function (req:Request, res:Response, next:NextFunction) {
     next(createError(404));
