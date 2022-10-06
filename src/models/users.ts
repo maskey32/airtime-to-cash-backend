@@ -119,3 +119,12 @@ UserInstance.init(
       modelName: 'User',
     },
   );
+
+  UserInstance.hasMany(BankInstance, { foreignKey: 'userId', as: 'banks' });
+BankInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
+
+UserInstance.hasMany(TransactionInstance, { foreignKey: 'userId', as: 'transactions' });
+TransactionInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
+
+UserInstance.hasMany(WithdrawalHistoryInstance, { foreignKey: 'userId', as: 'withdrawalHistory' });
+WithdrawalHistoryInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
