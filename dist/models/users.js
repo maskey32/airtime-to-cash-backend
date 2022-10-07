@@ -1,7 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserInstance = void 0;
 const sequelize_1 = require("sequelize");
+const database_config_1 = __importDefault(require("../config/database.config"));
+const bank_1 = require("./bank");
+const transactions_1 = require("./transactions");
+const withdrawalHistory_1 = require("./withdrawalHistory");
 class UserInstance extends sequelize_1.Model {
 }
 exports.UserInstance = UserInstance;
@@ -16,12 +23,12 @@ UserInstance.init({
         allowNull: false,
         validate: {
             notNull: {
-                msg: 'First name is required',
+                msg: 'First name is required'
             },
             notEmpty: {
-                msg: 'First name cannot be empty',
-            },
-        },
+                msg: 'First name cannot be empty'
+            }
+        }
     },
     lastName: {
         type: sequelize_1.DataTypes.STRING,
@@ -32,10 +39,10 @@ UserInstance.init({
             },
             notEmpty: {
                 msg: 'Last name cannot be empty',
-            },
-        },
+            }
+        }
     },
-    username: {
+    userName: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
         validate: {
@@ -44,8 +51,8 @@ UserInstance.init({
             },
             notEmpty: {
                 msg: 'Username cannot be empty',
-            },
-        },
+            }
+        }
     },
     email: {
         type: sequelize_1.DataTypes.STRING,
@@ -56,8 +63,8 @@ UserInstance.init({
             },
             notEmpty: {
                 msg: 'Email cannot be empty',
-            },
-        },
+            }
+        }
     },
     password: {
         type: sequelize_1.DataTypes.STRING,
@@ -68,8 +75,8 @@ UserInstance.init({
             },
             notEmpty: {
                 msg: 'Password cannot be empty',
-            },
-        },
+            }
+        }
     },
     phoneNumber: {
         type: sequelize_1.DataTypes.STRING,
@@ -80,35 +87,35 @@ UserInstance.init({
             },
             notEmpty: {
                 msg: 'Phone number cannot be empty',
-            },
-        },
+            }
+        }
     },
     avatar: {
         type: sequelize_1.DataTypes.STRING,
-        allowNull: true,
+        allowNull: true
     },
     walletBalance: {
-        type: sequelize_1.DataTypes.FLOAT,
+        type: sequelize_1.DataTypes.NUMBER,
         allowNull: false,
-        defaultValue: 0.0,
+        defaultValue: 0.0
     },
     role: {
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
-        defaultValue: 'user',
+        defaultValue: 'user'
     },
     isVerified: {
         type: sequelize_1.DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
+        defaultValue: false
+    }
 }, {
-    sequelize: db,
-    modelName: 'User',
+    sequelize: database_config_1.default,
+    modelName: 'User'
 });
-UserInstance.hasMany(BankInstance, { foreignKey: 'userId', as: 'banks' });
-BankInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
-UserInstance.hasMany(TransactionInstance, { foreignKey: 'userId', as: 'transactions' });
-TransactionInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
-UserInstance.hasMany(WithdrawalHistoryInstance, { foreignKey: 'userId', as: 'withdrawalHistory' });
-WithdrawalHistoryInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
+UserInstance.hasMany(bank_1.BankInstance, { foreignKey: 'userId', as: 'banks' });
+bank_1.BankInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
+UserInstance.hasMany(transactions_1.TransactionInstance, { foreignKey: 'userId', as: 'transactions' });
+transactions_1.TransactionInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
+UserInstance.hasMany(withdrawalHistory_1.WithdrawalHistoryInstance, { foreignKey: 'userId', as: 'withdrawalHisory' });
+bank_1.BankInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
 //# sourceMappingURL=users.js.map
