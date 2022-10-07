@@ -82,7 +82,7 @@ export const addBankSchema = Joi.object().keys({
   };
 
   export const generateToken = (user: Record<string, unknown>, expiryDate: string): unknown => {
-    const passPhrase = process.env.JWT_SECRETE as string;
+    const passPhrase = process.env.JWT_SECRET as string;
     return jwt.sign(user, passPhrase, { expiresIn: expiryDate });
   };
   

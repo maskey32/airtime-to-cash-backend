@@ -78,7 +78,7 @@ exports.options = {
     },
 };
 const generateToken = (user, expiryDate) => {
-    const passPhrase = process.env.JWT_SECRETE;
+    const passPhrase = process.env.JWT_SECRET;
     return jsonwebtoken_1.default.sign(user, passPhrase, { expiresIn: expiryDate });
 };
 exports.generateToken = generateToken;
