@@ -3,8 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.options = exports.updateWalletSchema = exports.withdrawSchema = exports.addTransactionSchema = exports.addBankSchema = exports.userUpdateSchema = exports.changePasswordSchema = exports.loginUserSchema = exports.createUserSchema = void 0;
+exports.generateToken = exports.options = exports.updateWalletSchema = exports.withdrawSchema = exports.addTransactionSchema = exports.addBankSchema = exports.userUpdateSchema = exports.changePasswordSchema = exports.loginUserSchema = exports.createUserSchema = void 0;
 const joi_1 = __importDefault(require("joi"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 exports.createUserSchema = joi_1.default.object().keys({
     firstName: joi_1.default.string().required(),
     lastName: joi_1.default.string().required(),
@@ -76,4 +77,9 @@ exports.options = {
         },
     },
 };
+const generateToken = (user, expiryDate) => {
+    const passPhrase = process.env.JWT_SECRETE;
+    return jsonwebtoken_1.default.sign(user, passPhrase, { expiresIn: expiryDate });
+};
+exports.generateToken = generateToken;
 //# sourceMappingURL=utils.js.map
