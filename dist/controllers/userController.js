@@ -13,6 +13,7 @@ async function createUser(req, res) {
         const { firstName, lastName, userName, email, phoneNumber, password } = req.body;
         const newId = (0, uuid_1.v4)();
         const validateResult = utils_1.createUserSchema.validate(req.body, utils_1.options);
+        console.log(validateResult.error?.details);
         if (validateResult.error) {
             return res.status(400).json({
                 error: validateResult.error.details[0].message

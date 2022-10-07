@@ -131,4 +131,4 @@ UserInstance.hasMany(TransactionInstance, { foreignKey: 'userId', as: 'transacti
 TransactionInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User'});
 
 UserInstance.hasMany(WithdrawalHistoryInstance, { foreignKey: 'userId', as: 'withdrawalHisory'});
-BankInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User'});
+WithdrawalHistoryInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User'});

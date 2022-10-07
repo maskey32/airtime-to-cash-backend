@@ -11,6 +11,8 @@ export async function createUser(req:Request, res:Response): Promise<unknown> {
         const newId = uuidv4();
 
         const validateResult = createUserSchema.validate(req.body, options);
+        console.log(validateResult.error?.details);
+        
 
         if(validateResult.error) {
             return res.status(400).json({

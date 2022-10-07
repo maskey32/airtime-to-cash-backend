@@ -117,5 +117,5 @@ bank_1.BankInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' }
 UserInstance.hasMany(transactions_1.TransactionInstance, { foreignKey: 'userId', as: 'transactions' });
 transactions_1.TransactionInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
 UserInstance.hasMany(withdrawalHistory_1.WithdrawalHistoryInstance, { foreignKey: 'userId', as: 'withdrawalHisory' });
-bank_1.BankInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
+withdrawalHistory_1.WithdrawalHistoryInstance.belongsTo(UserInstance, { foreignKey: 'userId', as: 'User' });
 //# sourceMappingURL=users.js.map
