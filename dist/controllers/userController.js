@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changePassword = exports.forgotPassword = exports.loginUser = exports.verifyUser = exports.createUser = void 0;
+exports.updateUserRecord = exports.changePassword = exports.forgotPassword = exports.loginUser = exports.verifyUser = exports.createUser = void 0;
 const uuid_1 = require("uuid");
 const users_1 = require("../models/users");
 const utils_1 = require("../utils/utils");
@@ -148,30 +148,56 @@ async function changePassword(req, res) {
             return res.status(400).json({ error: validationResult.error.details[0].message });
         }
         const { id } = req.params;
-        const user = await users_1.UserInstance.findOne({
-            where: {
-                id: id,
-            },
-        });
+        const user = await users_1.UserInstance.findOne({ where: { id: id } });
         if (!user) {
-            return res.status(403).json({
-                error: 'user does not exist',
-            });
+            return res.status(403).json({ error: 'user does not exist' });
         }
         const passwordHash = await bcryptjs_1.default.hash(req.body.password, 8);
-        await user?.update({
-            password: passwordHash,
-        });
-        return res.status(200).json({
-            message: 'Password Successfully Changed',
-        });
+        await user?.update({ password: passwordHash });
+        return res.status(200).json({ message: 'Password Successfully Changed' });
     }
     catch (error) {
-        res.status(500).json({
-            error: 'Internal server error',
-        });
+        res.status(500).json({ error: 'Internal server error' });
         throw new Error(`${error}`);
     }
 }
 exports.changePassword = changePassword;
+async function updateUserRecord(req, res) {
+    try {
+        const { id } = req.params;
+        const record = await users_1.UserInstance.findOne({ where: { id } });
+        if (!record) {
+            return res.status(400).json({ error: 'Invalid ID, User not found' });
+        }
+        if (req.body.userName) {
+            const check = (await users_1.UserInstance.findOne({ where: {
+                    userName: req.body.userName
+                } }));
+            if (check && check.id !== id) {
+                return res.status(403).json({ error: 'Username already taken' });
+            }
+        }
+        const updateRecord = {
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            phoneNumber: req.body.phoneNumber,
+            avatar: req.body.avatar,
+            username: req.body.username,
+        };
+        const validateUpdate = utils_1.userUpdateSchema.validate(updateRecord, utils_1.options);
+        if (validateUpdate.error) {
+            return res.status(400).json({ error: validateUpdate.error.details[0].message });
+        }
+        const updateUserRecord = await record?.update(updateRecord);
+        return res.status(200).json({
+            message: 'Update Successful',
+            record: updateUserRecord
+        });
+    }
+    catch (error) {
+        return res.status(500).json({ error: 'Failed to update record', route: '/patch/:id' });
+    }
+}
+exports.updateUserRecord = updateUserRecord;
 //# sourceMappingURL=userController.js.map

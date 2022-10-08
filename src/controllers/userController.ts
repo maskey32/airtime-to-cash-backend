@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { UserInstance } from '../models/users';
-import { changePasswordSchema, createUserSchema, generateToken, loginUserSchema, options } from '../utils/utils';
+import { changePasswordSchema, createUserSchema, generateToken, loginUserSchema, options, userUpdateSchema } from '../utils/utils';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { emailVerification, forgotPasswordVerification } from '../email/emailVerification';
@@ -182,29 +182,67 @@ export async function forgotPassword(req:Request, res:Response):Promise<unknown>
         }
         
         const { id } = req.params;
-      const user = await UserInstance.findOne({
-        where: {
-          id: id,
-        },
-      });
-      if (!user) {
-        return res.status(403).json({
-          error: 'user does not exist',
-        });
-      }
-      const passwordHash = await bcrypt.hash(req.body.password, 8);
+        const user = await UserInstance.findOne({ where: { id: id } });
+
+        if (!user) {
+        return res.status(403).json({ error: 'user does not exist' });
+        }
+
+        const passwordHash = await bcrypt.hash(req.body.password, 8);
   
-      await user?.update({
-        password: passwordHash,
-      });
-      return res.status(200).json({
-        message: 'Password Successfully Changed',
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: 'Internal server error',
-      });
-      throw new Error(`${error}`);
+        await user?.update({ password: passwordHash });
+
+        return res.status(200).json({ message: 'Password Successfully Changed' });
+
+        } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+        throw new Error(`${error}`);
     }
   }
 
+  export async function updateUserRecord(req: Request, res: Response): Promise<unknown> {
+    try {
+      const { id } = req.params;
+
+      const record = await UserInstance.findOne({ where: { id } });
+  
+      if (!record) {
+        return res.status(400).json({ error: 'Invalid ID, User not found' });
+      }
+
+      if (req.body.userName) {
+        const check = (await UserInstance.findOne({ where: { 
+            userName: req.body.userName 
+        } })) as unknown as { [key: string]: string };
+  
+        if (check && check.id !== id) {
+          return res.status(403).json({ error: 'Username already taken' });
+        }
+      }
+  
+      const updateRecord = {
+        firstName: req.body.firstName,
+        lastName: req.body.lastName,
+        email: req.body.email,
+        phoneNumber: req.body.phoneNumber,
+        avatar: req.body.avatar,
+        username: req.body.username,
+      };
+  
+      const validateUpdate = userUpdateSchema.validate(updateRecord, options);
+  
+      if (validateUpdate.error) {
+        return res.status(400).json({ error: validateUpdate.error.details[0].message });
+      }
+  
+      const updateUserRecord = await record?.update(updateRecord);
+  
+      return res.status(200).json({
+        message: 'Update Successful',
+        record: updateUserRecord
+      });
+
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to update record', route: '/patch/:id' });
+    }
+  }
