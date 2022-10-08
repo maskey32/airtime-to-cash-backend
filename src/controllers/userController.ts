@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { UserInstance } from '../models/users';
-import { createUserSchema, generateToken, loginUserSchema, options } from '../utils/utils';
+import { changePasswordSchema, createUserSchema, generateToken, loginUserSchema, options } from '../utils/utils';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { emailVerification } from '../email/emailVerification';
+import { emailVerification, forgotPasswordVerification } from '../email/emailVerification';
 import { sendVerifyMail } from '../email/sendMail';
 
 const passPhrase = process.env.JWT_SECRET as string;
@@ -13,20 +13,16 @@ const mailSubject = process.env.SUBJECT as string;
 
 const avatarUrl = 'https://cdn-icons-png.flaticon.com/512/1160/1160040.png?w=740& t=st=1663662557~exp=1663663157~hmac=534541c319dd6da1c7554d1fabb39370d4af64705b9a26bce48c6a08c2555fd8';
 
-export async function createUser(req:Request, res:Response): Promise<unknown> {
+export async function createUser(req:Request, res:Response):Promise<unknown> {
     try {
         const { firstName, lastName, userName, email, phoneNumber, password } = req.body;
 
         const newId = uuidv4();
 
-        const validateResult = createUserSchema.validate(req.body, options);
-        console.log(validateResult.error?.details);
-        
+        const validateResult = createUserSchema.validate(req.body, options);        
 
         if(validateResult.error) {
-            return res.status(400).json({
-                error: validateResult.error.details[0].message
-            });
+            return res.status(400).json({ error: validateResult.error.details[0].message });
         }
 
         const duplicateEmail = await UserInstance.findOne({
@@ -34,9 +30,7 @@ export async function createUser(req:Request, res:Response): Promise<unknown> {
         });
 
         if(duplicateEmail) {
-            return res.status(409).json({
-                error: 'Email already exists'
-            });
+            return res.status(409).json({ error: 'Email already exists' });
         }
 
         const duplicatePhoneNumber = await UserInstance.findOne({
@@ -44,9 +38,7 @@ export async function createUser(req:Request, res:Response): Promise<unknown> {
         });
 
         if(duplicatePhoneNumber) {
-            return res.status(409).json({
-                error: 'Phone number already exists'
-            });
+            return res.status(409).json({ error: 'Phone number already exists' });
         }
 
         const duplicateUserName = await UserInstance.findOne({
@@ -54,9 +46,7 @@ export async function createUser(req:Request, res:Response): Promise<unknown> {
         });
 
         if(duplicateUserName) {
-            return res.status(409).json({
-                error: 'Username already taken'
-            });
+            return res.status(409).json({ error: 'Username already taken' });
         }
 
         const passwordHash = await bcrypt.hash(password, 8);
@@ -86,9 +76,7 @@ export async function createUser(req:Request, res:Response): Promise<unknown> {
         });
 
     } catch(error) {
-        res.status(500).json({
-            error: error
-        });
+        res.status(500).json({ error: error });
         throw new Error(`${error}`);
     }
 }
@@ -105,21 +93,17 @@ export async function verifyUser(req:Request, res:Response):Promise<unknown> {
             where: { id: id }
         });
 
-        await record?.update({
-            isVerified: true
-        });
+        await record?.update({ isVerified: true });
 
         return res.status(302).redirect(`${process.env.FRONTEND_URL}/user/login`);
 
     } catch(error) {
-        res.status(500).json({
-            error: 'Internal Server Error',
-          });
+        res.status(500).json({ error: 'Internal Server Error' });
           throw new Error(`${error}`);        
     }
 }
 
-export async function loginUser(req:Request, res:Response) {
+export async function loginUser(req:Request, res:Response):Promise<unknown> {
     try {
         const validate = loginUserSchema.validate(req.body, options);
 
@@ -160,6 +144,67 @@ export async function loginUser(req:Request, res:Response) {
         return res.status(200).json({ message: 'Login successful', token, User });
 
     } catch (error) {
-        
+        res.status(500).json({ error: 'failed to login user' });
+        throw new Error(`${error}`);
     }
 }
+
+export async function forgotPassword(req:Request, res:Response):Promise<unknown> {
+    try {
+      const { email } = req.body;
+
+      const user = (await UserInstance.findOne({
+        where: { email: email }
+      })) as unknown as { [key: string]: string };
+  
+      if (!user) {
+        return res.status(404).json({ error: 'email not found' });
+      }
+
+      const { id } = user;
+      const html = forgotPasswordVerification(id);
+
+      await sendVerifyMail(mailFrom, email, mailSubject, html);
+      
+      return res.status(200).json({ message: 'Check email for the verification link' });
+
+    } catch (error) {
+      res.status(500).json({error});
+      throw new Error(`${error}`);
+    }
+  }
+
+  export async function changePassword(req:Request, res:Response):Promise<unknown> {
+    try {
+        const validationResult = changePasswordSchema.validate(req.body, options);
+        if (validationResult.error) {
+            return res.status(400).json({ error: validationResult.error.details[0].message});
+        }
+        
+        const { id } = req.params;
+      const user = await UserInstance.findOne({
+        where: {
+          id: id,
+        },
+      });
+      if (!user) {
+        return res.status(403).json({
+          error: 'user does not exist',
+        });
+      }
+      const passwordHash = await bcrypt.hash(req.body.password, 8);
+  
+      await user?.update({
+        password: passwordHash,
+      });
+      return res.status(200).json({
+        message: 'Password Successfully Changed',
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'Internal server error',
+      });
+      throw new Error(`${error}`);
+    }
+  }
+

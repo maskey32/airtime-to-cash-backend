@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.loginUser = exports.verifyUser = exports.createUser = void 0;
+exports.changePassword = exports.forgotPassword = exports.loginUser = exports.verifyUser = exports.createUser = void 0;
 const uuid_1 = require("uuid");
 const users_1 = require("../models/users");
 const utils_1 = require("../utils/utils");
@@ -20,35 +20,26 @@ async function createUser(req, res) {
         const { firstName, lastName, userName, email, phoneNumber, password } = req.body;
         const newId = (0, uuid_1.v4)();
         const validateResult = utils_1.createUserSchema.validate(req.body, utils_1.options);
-        console.log(validateResult.error?.details);
         if (validateResult.error) {
-            return res.status(400).json({
-                error: validateResult.error.details[0].message
-            });
+            return res.status(400).json({ error: validateResult.error.details[0].message });
         }
         const duplicateEmail = await users_1.UserInstance.findOne({
             where: { email: email }
         });
         if (duplicateEmail) {
-            return res.status(409).json({
-                error: 'Email already exists'
-            });
+            return res.status(409).json({ error: 'Email already exists' });
         }
         const duplicatePhoneNumber = await users_1.UserInstance.findOne({
             where: { phoneNumber: phoneNumber }
         });
         if (duplicatePhoneNumber) {
-            return res.status(409).json({
-                error: 'Phone number already exists'
-            });
+            return res.status(409).json({ error: 'Phone number already exists' });
         }
         const duplicateUserName = await users_1.UserInstance.findOne({
             where: { userName: userName }
         });
         if (duplicateUserName) {
-            return res.status(409).json({
-                error: 'Username already taken'
-            });
+            return res.status(409).json({ error: 'Username already taken' });
         }
         const passwordHash = await bcryptjs_1.default.hash(password, 8);
         const record = await users_1.UserInstance.create({
@@ -73,9 +64,7 @@ async function createUser(req, res) {
         });
     }
     catch (error) {
-        res.status(500).json({
-            error: error
-        });
+        res.status(500).json({ error: error });
         throw new Error(`${error}`);
     }
 }
@@ -88,15 +77,11 @@ async function verifyUser(req, res) {
         const record = await users_1.UserInstance.findOne({
             where: { id: id }
         });
-        await record?.update({
-            isVerified: true
-        });
+        await record?.update({ isVerified: true });
         return res.status(302).redirect(`${process.env.FRONTEND_URL}/user/login`);
     }
     catch (error) {
-        res.status(500).json({
-            error: 'Internal Server Error',
-        });
+        res.status(500).json({ error: 'Internal Server Error' });
         throw new Error(`${error}`);
     }
 }
@@ -131,7 +116,62 @@ async function loginUser(req, res) {
         return res.status(200).json({ message: 'Login successful', token, User });
     }
     catch (error) {
+        res.status(500).json({ error: 'failed to login user' });
+        throw new Error(`${error}`);
     }
 }
 exports.loginUser = loginUser;
+async function forgotPassword(req, res) {
+    try {
+        const { email } = req.body;
+        const user = (await users_1.UserInstance.findOne({
+            where: { email: email }
+        }));
+        if (!user) {
+            return res.status(404).json({ error: 'email not found' });
+        }
+        const { id } = user;
+        const html = (0, emailVerification_1.forgotPasswordVerification)(id);
+        await (0, sendMail_1.sendVerifyMail)(mailFrom, email, mailSubject, html);
+        return res.status(200).json({ message: 'Check email for the verification link' });
+    }
+    catch (error) {
+        res.status(500).json({ error });
+        throw new Error(`${error}`);
+    }
+}
+exports.forgotPassword = forgotPassword;
+async function changePassword(req, res) {
+    try {
+        const validationResult = utils_1.changePasswordSchema.validate(req.body, utils_1.options);
+        if (validationResult.error) {
+            return res.status(400).json({ error: validationResult.error.details[0].message });
+        }
+        const { id } = req.params;
+        const user = await users_1.UserInstance.findOne({
+            where: {
+                id: id,
+            },
+        });
+        if (!user) {
+            return res.status(403).json({
+                error: 'user does not exist',
+            });
+        }
+        const passwordHash = await bcryptjs_1.default.hash(req.body.password, 8);
+        await user?.update({
+            password: passwordHash,
+        });
+        return res.status(200).json({
+            message: 'Password Successfully Changed',
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            error: 'Internal server error',
+        });
+        throw new Error(`${error}`);
+    }
+}
+exports.changePassword = changePassword;
 //# sourceMappingURL=userController.js.map

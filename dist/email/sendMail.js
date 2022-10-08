@@ -7,8 +7,6 @@ exports.sendVerifyMail = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const mailUser = process.env.GMAIL_USER;
 const mailPass = process.env.GMAIL_PASS;
-const fromUser = process.env.FROM;
-const userSubject = process.env.SUBJECT;
 const transport = nodemailer_1.default.createTransport({
     service: 'gmail',
     auth: {
@@ -21,7 +19,7 @@ const transport = nodemailer_1.default.createTransport({
 });
 const sendVerifyMail = (from, to, subject, html) => {
     return new Promise((resolve, reject) => {
-        transport.sendMail({ from: fromUser, subject: userSubject, to, html }, (err, info) => {
+        transport.sendMail({ from, subject, to, html }, (err, info) => {
             if (err)
                 reject(err);
             resolve(info);
