@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateUserRecord = exports.changePassword = exports.forgotPassword = exports.loginUser = exports.verifyUser = exports.createUser = void 0;
+exports.getAllUser = exports.getSingleUser = exports.updateUserRecord = exports.changePassword = exports.forgotPassword = exports.loginUser = exports.verifyUser = exports.createUser = void 0;
 const uuid_1 = require("uuid");
 const users_1 = require("../models/users");
 const utils_1 = require("../utils/utils");
@@ -11,6 +11,8 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const emailVerification_1 = require("../email/emailVerification");
 const sendMail_1 = require("../email/sendMail");
+const bank_1 = require("../models/bank");
+const transactions_1 = require("../models/transactions");
 const passPhrase = process.env.JWT_SECRET;
 const mailFrom = process.env.FROM;
 const mailSubject = process.env.SUBJECT;
@@ -200,4 +202,54 @@ async function updateUserRecord(req, res) {
     }
 }
 exports.updateUserRecord = updateUserRecord;
+async function getSingleUser(req, res) {
+    try {
+        const { id } = req.params;
+        const user = await users_1.UserInstance.findOne({
+            where: { id },
+            include: [
+                {
+                    model: bank_1.BankInstance,
+                    as: 'banks'
+                },
+                {
+                    model: transactions_1.TransactionInstance,
+                    as: 'transactions'
+                },
+            ],
+        });
+        return res.status(200).json({ message: 'Successfully fetched single user', user });
+    }
+    catch (error) {
+        res.status(500).json({ error: 'failed to fetch single user', route: '/user/:id' });
+    }
+}
+exports.getSingleUser = getSingleUser;
+async function getAllUser(req, res) {
+    try {
+        const singleUser = await users_1.UserInstance.findAndCountAll({
+            include: [
+                {
+                    model: bank_1.BankInstance,
+                    as: 'banks',
+                },
+                {
+                    model: transactions_1.TransactionInstance,
+                    as: 'transactions',
+                },
+            ],
+        });
+        return res.status(200).json({
+            message: 'Successfully fetched single user',
+            singleUser,
+        });
+    }
+    catch (error) {
+        res.status(500).json({
+            error: 'failed to fetch single user',
+            route: '/getAllUsers',
+        });
+    }
+}
+exports.getAllUser = getAllUser;
 //# sourceMappingURL=userController.js.map

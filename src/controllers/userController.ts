@@ -6,6 +6,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { emailVerification, forgotPasswordVerification } from '../email/emailVerification';
 import { sendVerifyMail } from '../email/sendMail';
+import { BankInstance } from '../models/bank';
+import { TransactionInstance } from '../models/transactions';
 
 const passPhrase = process.env.JWT_SECRET as string;
 const mailFrom = process.env.FROM as string;
@@ -200,7 +202,7 @@ export async function forgotPassword(req:Request, res:Response):Promise<unknown>
     }
   }
 
-  export async function updateUserRecord(req: Request, res: Response): Promise<unknown> {
+  export async function updateUserRecord(req:Request, res:Response):Promise<unknown> {
     try {
       const { id } = req.params;
 
@@ -244,5 +246,57 @@ export async function forgotPassword(req:Request, res:Response):Promise<unknown>
 
     } catch (error) {
       return res.status(500).json({ error: 'Failed to update record', route: '/patch/:id' });
+    }
+  }
+
+  export async function getSingleUser(req:Request, res:Response):Promise<unknown> {
+    try {
+      const { id } = req.params;
+  
+      const user = await UserInstance.findOne({
+        where: { id },
+        include: [
+          {
+            model: BankInstance,
+            as: 'banks'
+          },
+          {
+            model: TransactionInstance,
+            as: 'transactions'
+          },
+        ],
+      });
+
+      return res.status(200).json({ message: 'Successfully fetched single user', user});
+
+    } catch (error) {
+      res.status(500).json({ error: 'failed to fetch single user', route: '/user/:id' });
+    }
+
+  }
+  
+  export async function getAllUser(req:Request, res:Response):Promise<unknown> {
+    try {
+      const singleUser = await UserInstance.findAndCountAll({
+        include: [
+          {
+            model: BankInstance,
+            as: 'banks',
+          },
+          {
+            model: TransactionInstance,
+            as: 'transactions',
+          },
+        ],
+      });
+      return res.status(200).json({
+        message: 'Successfully fetched single user',
+        singleUser,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: 'failed to fetch single user',
+        route: '/getAllUsers',
+      });
     }
   }
